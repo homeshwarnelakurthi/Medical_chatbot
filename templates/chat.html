@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MediBot — Medical Chatbot</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <main class="chat-card">
+    <header class="chat-header">
+      <div class="avatar">🩺</div>
+      <div>
+        <h1>MediBot</h1>
+        <p class="status">Ask me anything from the medical knowledge base</p>
+      </div>
+    </header>
+
+    <section id="chat-window" class="chat-window">
+      <div class="message bot">
+        <div class="bubble">
+          Hello! I'm MediBot. Ask me a medical question and I'll answer from my
+          knowledge base. I'm not a substitute for a real doctor.
+        </div>
+      </div>
+    </section>
+
+    <form id="chat-form" class="chat-input" autocomplete="off">
+      <input id="msg-input" type="text" name="msg" placeholder="Type your question…" required />
+      <button type="submit" aria-label="Send">➤</button>
+    </form>
+
+    <footer class="disclaimer">
+      For educational purposes only — always consult a qualified doctor.
+    </footer>
+  </main>
+
+  <script>
+    const form = document.getElementById("chat-form");
+    const input = document.getElementById("msg-input");
+    const windowEl = document.getElementById("chat-window");
+
+    function addMessage(text, who) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "message " + who;
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      bubble.textContent = text;
+      wrapper.appendChild(bubble);
+      windowEl.appendChild(wrapper);
+      windowEl.scrollTop = windowEl.scrollHeight;
+      return bubble;
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = input.value.trim();
+      if (!msg) return;
+      addMessage(msg, "user");
+      input.value = "";
+      input.disabled = true;
+
+      const typing = addMessage("Thinking…", "bot");
+      try {
+        const res = await fetch("/get", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ msg }),
+        });
+        typing.textContent = res.ok
+          ? await res.text()
+          : "Sorry, something went wrong. Please try again.";
+      } catch {
+        typing.textContent = "Sorry, I couldn't reach the server.";
+      } finally {
+        input.disabled = false;
+        input.focus();
+      }
+    });
+  </script>
+</body>
+</html>
